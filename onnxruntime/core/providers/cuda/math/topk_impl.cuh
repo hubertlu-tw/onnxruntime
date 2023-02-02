@@ -407,8 +407,10 @@ Status TopKImpl(const CudaKernel* kernel, Stream* ort_stream, const T* input_x, 
   auto aligned_K = ALIGN(K);
   auto aligned_dimension = ALIGN(dimension);
   if (aligned_dimension <= GridDim::maxThreadsPerBlock) {
-    auto blk_size = max(64, K);
-    if (blk_size <= 64) {
+    auto blk_size = max(32, K);
+    if (blk_size == 32) {
+      BitonicTopK<CudaT><<<N, 32, aligned_dimension * sizeof(KV<CudaT>), stream>>>(input_x_ptr, output_v_ptr, output_i, elem_nums, size, axis, K, aligned_K, largest, sorted, dimension, aligned_dimension, NumericLimits<T>::Min(), NumericLimits<T>::Max());
+    } else if (blk_size <= 64) {
       BitonicTopK<CudaT><<<N, 64, aligned_dimension * sizeof(KV<CudaT>), stream>>>(input_x_ptr, output_v_ptr, output_i, elem_nums, size, axis, K, aligned_K, largest, sorted, dimension, aligned_dimension, NumericLimits<T>::Min(), NumericLimits<T>::Max());
     } else if (blk_size <= 128) {
       BitonicTopK<CudaT><<<N, 128, aligned_dimension * sizeof(KV<CudaT>), stream>>>(input_x_ptr, output_v_ptr, output_i, elem_nums, size, axis, K, aligned_K, largest, sorted, dimension, aligned_dimension, NumericLimits<T>::Min(), NumericLimits<T>::Max());
